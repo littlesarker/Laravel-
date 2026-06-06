@@ -1,0 +1,66 @@
+Route Middleware
+
+web.php
+
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+
+// Public home page
+Route::get('/', function () {
+    return view('home');
+});
+
+// Route to simulate changing user role (stores in session)
+Route::post('/set-role', function (Request $request) {
+    session(['user_role' => $request->role]);
+    return redirect('/');
+});
+
+// Logout – clear session
+Route::get('/logout', function () {
+    session()->forget('user_role');
+    return redirect('/');
+});
+
+// Protected admin dashboard – uses 'admin' middleware
+Route::get('/admin/dashboard', function () {
+    return view('admin.dashboard');
+})->middleware('admin');
+
+// Access denied page (no middleware)
+Route::get('/access-denied', function () {
+    return view('access-denied');
+});
+
+
+//admin middleware
+
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+    
+
+class AdminMiddleware
+{
+    public function handle(Request $request, Closure $next)
+    {
+        // Simulate role check – in real app, get from auth user
+        $userRole = session('user_role', 'guest'); // default 'guest'
+
+        if ($userRole !== 'admin') {
+            // Reject and redirect to "access denied" view
+            return redirect('/access-denied');
+        }
+
+        // Allow request to continue to the controller/route
+        return $next($request);
+    }
+}
+
+
